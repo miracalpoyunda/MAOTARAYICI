@@ -1,2 +1,3 @@
 #PyQt6
 #pyinstaller
+#pip install PyQt6 pyinstaller
