@@ -762,6 +762,17 @@ class MaoBrowserV2(QMainWindow):
         browser.loadProgress.connect(self.update_progress_bar)
         browser.loadStarted.connect(lambda: self.progress_bar.show())
         
+        # EKRAN KARARMA SORUNU İÇİN: Çökme (Render Process Terminated) sinyali kurtarıcısı
+        browser.page().renderProcessTerminated.connect(
+            lambda status, code, b=browser: self.handle_render_crash(b, status, code)
+        )
+
+    def handle_render_crash(self, browser, status, code):
+        """Web motoru çöktüğünde (siyah ekran) sayfayı otomatik kurtarır."""
+        logger.warning(f"Web motoru çöktü! (Siyah Ekran). Durum: {status}, Kod: {code}. Kurtarılıyor...")
+        self.status.showMessage("Görüntü motoru çöktü, sayfa otomatik kurtarılıyor...", 4000)
+        browser.reload()
+        
     def add_blank_tab(self):
         browser = QWebEngineView()
         page = MaoWebPage(self.profile, self)
@@ -849,6 +860,15 @@ def main():
     logger.info("="*50)
     logger.info("MAO TARAYICI V2 (PROFESYONEL TEK DOSYA) BAŞLATILIYOR")
     logger.info("="*50)
+    
+    # --- EKRAN KARARMA (GPU) SORUNU ÇÖZÜMÜ ---
+    # Ekran kartı sürücüsü (NVIDIA/AMD vb.) ile Chromium uyuşmazlığını engeller
+    sys.argv.extend([
+        "--disable-gpu", 
+        "--no-sandbox", 
+        "--disable-software-rasterizer",
+        "--disable-gpu-compositing"
+    ])
     
     app = QApplication(sys.argv)
     
